@@ -2,7 +2,7 @@ import { t, getLang, setLang, STR } from './i18n.js';
 import { LS, LocalStore, makeSheetStore, photoUrl, photoFallback, parseConnect, connectLinkFor } from './store.js';
 import { readLabel, MODELS } from './ai.js';
 
-const VERSION = '0.3.2';
+const VERSION = '0.3.3';
 const $ = s => document.querySelector(s);
 const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const has = v => v !== undefined && v !== null && v !== '';
@@ -55,12 +55,12 @@ const pxCache = new Map();
 async function listPhoto(photo) {
   if (!photo) return null;
   if (!S.pixel) return photoUrl(photo, 500);
-  if (!photo.startsWith('local:')) return photoUrl(photo, 56);
+  if (!photo.startsWith('local:')) return photoUrl(photo, 80);
   if (pxCache.has(photo)) return pxCache.get(photo);
   const big = await photoUrl(photo); if (!big) return null;
   const img = await new Promise(r => { const i = new Image(); i.onload = () => r(i); i.onerror = () => r(null); i.src = big; });
   if (!img) return big;
-  const w = 48, h = Math.round(img.naturalHeight * w / img.naturalWidth);
+  const w = 72, h = Math.round(img.naturalHeight * w / img.naturalWidth);
   const c = document.createElement('canvas'); c.width = w; c.height = h;
   c.getContext('2d').drawImage(img, 0, 0, w, h);
   const u = c.toDataURL('image/png'); pxCache.set(photo, u); return u;

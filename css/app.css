@@ -293,3 +293,6 @@ body[data-theme="all"] .empty{background:#0B1030;border-color:#3A4A8A}
 /* 전체 탭의 시트는 한지색 */
 body[data-theme="all"] .sheet{--surface:#F4EFE2;--sunk:#E6DFCB;--line:#0B1030;--ink:#1A1E3A;--muted:#4A507A;--dim:#6A708A;--accent:#B23A2E;--accent-ink:#F4EFE2;--accent-dk:#7A1E16;--accent-lt:#E0705E;--shadow:#0B1030;--ok:#2F7A4A;--danger:#B23A2E;color-scheme:light;border-color:#0B1030;box-shadow:0 -4px 0 #0B1030}
 body[data-theme="all"] .toast{background:#F4EFE2;color:#1A1E3A}
+
+/* 도트 사진: 색을 진하고 또렷하게 */
+img.photo.px{filter:contrast(1.2) saturate(1.4) brightness(1.04)}
