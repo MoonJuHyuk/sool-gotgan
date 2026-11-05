@@ -264,3 +264,32 @@ fieldset legend::before{content:"▸ "}
 
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(100px + env(safe-area-inset-bottom,0px));z-index:30;background:var(--ink);color:var(--bg);padding:10px 16px;font-size:13px;max-width:calc(100vw - 32px);border:2px solid var(--shadow)}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+/* ---------- E1: 주막 쪽빛 (전체 탭) ---------- */
+body[data-theme="all"]{
+  --bg:#16204A; --bar:#16204A; --surface:#0B1030; --sunk:#0B1030; --line:#3A4A8A; --line2:#24306A;
+  --ink:#F4EFE2; --muted:#AEB8E0; --dim:#8A94C0; --accent:#F4EFE2; --accent-ink:#B23A2E; --accent-dk:#C9BFA6; --accent-lt:#FFFFFF;
+  --shadow:#0B1030; --frame:#F4EFE2; --r:0px; --bw:2px; --seal:#B23A2E;
+  background-color:#16204A;background-image:linear-gradient(90deg,rgba(255,255,255,.04) 2px,transparent 2px);background-size:24px 100%;background-attachment:fixed}
+body[data-theme="all"] .top{background:#16204Aee;border-bottom-color:#24306A}
+body[data-theme="all"] h1{color:#F4EFE2;text-shadow:none}
+.flag{display:none;width:30px;padding:7px 0 12px;background:#F4EFE2;color:#B23A2E;border:2px solid #0B1030;flex-direction:column;align-items:center;font-size:13px;font-weight:700;line-height:1.25;clip-path:polygon(0 0,100% 0,100% 100%,50% 88%,0 100%)}
+body[data-theme="all"] .flag{display:flex}
+body[data-theme="all"] .tabs button[aria-pressed="true"]{background:#F4EFE2;color:#B23A2E;border-color:#0B1030;box-shadow:3px 3px 0 #0B1030}
+body[data-theme="all"] .iconbtn{background:#0B1030;border-color:#F4EFE2;box-shadow:none}
+body[data-theme="all"] .search span{color:#E0705E}
+.e1grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px}
+.hcard{all:unset;cursor:pointer;display:flex;flex-direction:column;min-width:0;background:#F4EFE2;color:#1A1E3A;border:2px solid #0B1030;box-shadow:4px 4px 0 #0B1030;position:relative}
+.hcard:focus-visible{outline:2px solid #F4EFE2;outline-offset:3px}
+.hcard .shelf{height:128px;display:grid;place-items:center;background:#E6DFCB;background-image:linear-gradient(transparent 110px,#8A6A3A 110px 116px,transparent 116px);border-bottom:2px solid #0B1030;position:relative;overflow:hidden}
+.hcard .shelf img.photo{width:100%;height:100%;object-fit:cover}
+.hcard .shelf img.sprite{width:48px;height:auto}
+.seal{position:absolute;top:6px;right:6px;width:26px;height:26px;background:var(--seal,#B23A2E);color:#F4EFE2;font-size:11px;display:grid;place-items:center;border:2px solid #7A1E16;z-index:1}
+.hcard .qtyk{position:absolute;top:6px;left:6px;font-size:11px;background:#0B1030;color:#F4EFE2;padding:1px 6px;z-index:1}
+.hcard .txt{padding:8px 9px 10px;display:flex;flex-direction:column;gap:3px}
+.hcard .o{color:#5A607A}.hcard .s{color:#2C4A9A}
+body[data-theme="all"] .fab{background:#B23A2E;color:#F4EFE2;border:3px solid #F4EFE2;outline:2px solid #0B1030;box-shadow:none}
+body[data-theme="all"] .empty{background:#0B1030;border-color:#3A4A8A}
+/* 전체 탭의 시트는 한지색 */
+body[data-theme="all"] .sheet{--surface:#F4EFE2;--sunk:#E6DFCB;--line:#0B1030;--ink:#1A1E3A;--muted:#4A507A;--dim:#6A708A;--accent:#B23A2E;--accent-ink:#F4EFE2;--accent-dk:#7A1E16;--accent-lt:#E0705E;--shadow:#0B1030;--ok:#2F7A4A;--danger:#B23A2E;color-scheme:light;border-color:#0B1030;box-shadow:0 -4px 0 #0B1030}
+body[data-theme="all"] .toast{background:#F4EFE2;color:#1A1E3A}

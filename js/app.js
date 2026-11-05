@@ -2,7 +2,7 @@ import { t, getLang, setLang, STR } from './i18n.js';
 import { LS, LocalStore, makeSheetStore, photoUrl, photoFallback, parseConnect, connectLinkFor } from './store.js';
 import { readLabel, MODELS } from './ai.js';
 
-const VERSION = '0.3.0';
+const VERSION = '0.3.1';
 const $ = s => document.querySelector(s);
 const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const has = v => v !== undefined && v !== null && v !== '';
@@ -24,7 +24,7 @@ const typeList = kind => STR[getLang()][kind === 'whisky' ? 'whiskyTypes' : kind
 const S = { items: [], filter: 'all', q: '', sort: LS.get('cellar.sort', 'recent'), store: null, conn: null, cfg: {}, loaded: false, offline: false, pixel: LS.get('cellar.pixel', true) };
 
 /* ---------------- 테마 · 도트 그림 ---------------- */
-const themeOf = f => f === 'wine' ? 'wine' : f === 'other' ? 'other' : 'whisky';
+const themeOf = f => f === 'wine' ? 'wine' : f === 'other' ? 'other' : f === 'all' ? 'all' : 'whisky';
 const wineTone = it => /레드|red|rouge|rosso|tinto/i.test(it.type || '') ? 'red' : /화이트|white|blanc|bianco|blanco|샤블리/i.test(it.type || '') ? 'white' : (/로제|rosé|rose|스파클링|sparkling/i.test(it.type || '') ? 'etc' : 'red');
 const NEON = [[/사케|sake|청주|cheongju|약주|yakju/i, '#FF3E9A'], [/막걸리|makgeolli|전통/i, '#3FD6C8'], [/소주|soju|진|gin|보드카|vodka/i, '#A98BFF'], [/브랜디|brandy|코냑|cognac|럼|rum|데킬라|tequila/i, '#FF8A3D']];
 const neonOf = it => (NEON.find(([re]) => re.test(it.type || '')) || [, '#FFE14D'])[1];
@@ -32,10 +32,10 @@ function spriteOf(it) {
   const k = kindOf(it), theme = document.body.dataset.theme;
   if (k === 'whisky') return 'icons/px/a-whisky.png';
   if (k === 'other') {
-    const ty = it.type || '';
-    if (/막걸리|makgeolli|약주|청주|전통/i.test(ty)) return 'icons/px/e2-gourd.png';
-    if (/사케|sake|소주|soju/i.test(ty)) return 'icons/px/e2-tok.png';
-    return 'icons/px/e2-brandy.png';
+    const ty = it.type || '', set = theme === 'all' ? 'e1' : 'e2';
+    if (/막걸리|makgeolli|약주|청주|전통/i.test(ty)) return `icons/px/${set}-gourd.png`;
+    if (/사케|sake|소주|soju/i.test(ty)) return `icons/px/${set}-tok.png`;
+    return `icons/px/${set}-brandy.png`;
   }
   const tone = wineTone(it) === 'white' ? 'white' : 'red';
   return `icons/px/${theme === 'wine' ? 'c' : 'a'}-${tone}.png`;
@@ -45,8 +45,9 @@ function applyTheme() {
   document.body.dataset.theme = th;
   $('#gearImg').src = th === 'whisky' ? 'icons/px/a-gear.png' : 'icons/px/c-gear.png';
   $('#fabImg').src = th === 'whisky' ? 'icons/px/a-cam.png' : 'icons/px/c-cam.png';
+  $('#title').textContent = th === 'all' ? t('allTitle') : t('appName');
   $('#fabLbl').textContent = th === 'wine' ? t('fabWine') : th === 'other' ? t('fabOther') : '';
-  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', th === 'wine' ? '#1E0B28' : th === 'other' ? '#0A0418' : '#16110E');
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', th === 'wine' ? '#1E0B28' : th === 'other' ? '#0A0418' : th === 'all' ? '#16204A' : '#16110E');
 }
 
 /* 목록 사진: 작게 받아 크게 늘려 도트처럼 */
@@ -149,6 +150,14 @@ function itemA(it) {
       ${qtyOf(it) > 1 ? `<span class="qty">x${qtyOf(it)}</span>` : ''}${qtyOf(it) === 0 ? `<span class="zero">0${t('bottles')}</span>` : ''}</div>
     <div class="txt"><span class="n">${esc(it.pron || it.name)}</span>${it.pron ? `<span class="o">${esc(it.name)}</span>` : ''}<span class="s">${esc(subline(it)) || '&nbsp;'}</span></div></button>`;
 }
+function itemE1(it) {
+  const k = kindOf(it), seal = (it.type || t(k)).trim().charAt(0);
+  return `<button class="hcard" data-id="${esc(it.id)}">
+    <div class="shelf" data-photo="${esc(it.photo || '')}"><img class="sprite px" src="${spriteOf(it)}" alt=""></div>
+    <span class="seal" aria-hidden="true">${esc(seal)}</span>${qtyOf(it) !== 1 ? `<span class="qtyk">x${qtyOf(it)}</span>` : ''}
+    <div class="txt"><span class="n">${esc(it.pron || it.name)}</span>${it.pron ? `<span class="o">${esc(it.name)}</span>` : ''}
+      <span class="s">${esc([it.type, subline(it)].filter(has).join(' · ')) || '&nbsp;'}</span></div></button>`;
+}
 function itemWine(it) {
   const k = kindOf(it), tone = k === 'wine' ? wineTone(it) : 'etc';
   return `<button class="row" data-id="${esc(it.id)}"><span class="cur" aria-hidden="true">▶</span>
@@ -180,6 +189,7 @@ function render() {
   if (!list.length) box.innerHTML = '';
   else if (th === 'wine') box.innerHTML = `<div class="win wlist"><div class="whead"><span>${t('cellarWine')}</span><span>${t('cellarCol')}</span></div>${list.map(itemWine).join('')}</div>`;
   else if (th === 'other') box.innerHTML = `<div class="nlist">${list.map(itemNeon).join('')}</div>`;
+  else if (th === 'all') box.innerHTML = `<div class="e1grid">${list.map(itemE1).join('')}</div>`;
   else box.innerHTML = `<div class="grid">${list.map(itemA).join('')}</div>`;
 
   box.querySelectorAll('[data-photo]').forEach(async el => {
