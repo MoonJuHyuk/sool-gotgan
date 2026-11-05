@@ -22,6 +22,7 @@ const PHOTO_FOLDER = '술곳간 사진';
 const FIELDS = [
   ['id', 'ID'],
   ['kind', '종류 Kind'],
+  ['pron', '읽는 법 Pronunciation'],
   ['name', '이름 Name'],
   ['type', '세부종류 Type'],
   ['vintage', '빈티지 Vintage'],

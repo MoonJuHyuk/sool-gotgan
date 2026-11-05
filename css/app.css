@@ -157,3 +157,6 @@ fieldset legend{grid-column:1/-1;font-size:12px;letter-spacing:.08em;color:var(-
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 a.btn{text-decoration:none;color:inherit;display:inline-flex;align-items:center}
 label.btn{display:inline-flex;align-items:center;gap:8px;justify-content:center}
+
+.tag .o{font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:-1px}
+.info .orig{margin:4px 0 0;color:var(--muted);font-size:14.5px;overflow-wrap:anywhere;font-style:italic}

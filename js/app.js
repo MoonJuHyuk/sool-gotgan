@@ -69,10 +69,10 @@ const subline = it => it.kind === 'whisky'
 function visible() {
   const q = S.q.trim().toLowerCase();
   let list = S.items.filter(it => S.filter === 'all' || it.kind === S.filter);
-  if (q) list = list.filter(it => [it.name, it.producer, it.grapes, it.region, it.country, it.type, it.note, it.cask, it.location].join(' ').toLowerCase().includes(q));
+  if (q) list = list.filter(it => [it.pron, it.name, it.producer, it.grapes, it.region, it.country, it.type, it.note, it.cask, it.location].join(' ').toLowerCase().includes(q));
   const by = {
     recent: (a, b) => String(b.created || '').localeCompare(String(a.created || '')),
-    name: (a, b) => String(a.name || '').localeCompare(String(b.name || ''), getLang()),
+    name: (a, b) => String(a.pron || a.name || '').localeCompare(String(b.pron || b.name || ''), getLang()),
     price: (a, b) => (Number(b.price) || 0) - (Number(a.price) || 0),
     vintage: (a, b) => (Number(a.vintage) || 9999) - (Number(b.vintage) || 9999),
   };
@@ -99,7 +99,7 @@ function render() {
         ${(Number(it.qty) || 0) > 1 ? `<span class="qty">${Number(it.qty)}${t('bottles')}</span>` : ''}
         ${(Number(it.qty) || 0) === 0 ? `<span class="zero">0${t('bottles')}</span>` : ''}</div>
       <div class="tag"><span class="k">${esc(it.type || t(it.kind === 'whisky' ? 'whisky' : 'wine'))}</span>
-        <span class="n">${esc(it.name)}</span><span class="s">${esc(subline(it)) || '&nbsp;'}</span></div></button>`).join('');
+        <span class="n">${esc(it.pron || it.name)}</span>${it.pron ? `<span class="o">${esc(it.name)}</span>` : ''}<span class="s">${esc(subline(it)) || '&nbsp;'}</span></div></button>`).join('');
   grid.querySelectorAll('.thumb[data-photo]').forEach(async el => {
     const p = el.dataset.photo; if (!p) return;
     const u = await photoUrl(p, 500); if (!u) return;
@@ -163,7 +163,7 @@ async function openDetail(id) {
       <div class="photo" id="dPhoto"><div class="ph">${bottleSVG(it.kind)}</div></div>
       <div class="info">
         <div class="chips"><span class="chip">${esc(it.type || t(w ? 'wine' : 'whisky'))}</span></div>
-        <h2>${esc(it.name)}</h2>
+        <div><h2>${esc(it.pron || it.name)}</h2>${it.pron ? `<p class="orig">${esc(it.name)}</p>` : ''}</div>
         ${dl(rows) ? `<dl>${dl(rows)}</dl>` : ''}
         ${T.length ? `<div><p class="h3">${t('taste')}</p><div class="taste">${T.map(k => `<span>${tasteLabel(it.kind, k)}</span>${pips(it[k])}<span class="v">${it[k]}/5</span>`).join('')}</div></div>` : ''}
         ${has(it.desc) ? `<div><p class="h3">${t('about')}</p><p class="prose">${esc(it.desc)}</p></div>` : ''}
@@ -270,6 +270,7 @@ function openForm(id, file) {
         <div class="side"><label class="btn" for="f_photo">${camIcon()} ${t(it?.photo ? 'takePhoto' : 'pickPhoto')}</label><input id="f_photo" type="file" accept="image/*" hidden><span id="aiHint" class="hint"></span></div></div>
       <div id="aiBox"></div>
       <fieldset><legend>${t('sBasic')}</legend>
+        ${field('pron', t('f_pron'), v('pron'), { full: true, ph: t('f_pron_ph') })}
         ${field('name', t('f_name') + ' *', v('name'), { full: true })}
         ${typeSel('wine', kind === 'wine' ? v('type') : '')}${typeSel('whisky', kind === 'whisky' ? v('type') : '')}
         ${field('vintage', t('f_vintage'), v('vintage'), { type: 'number', ph: '2018', only: 'wine' })}
@@ -365,7 +366,7 @@ function fillFromAI(r) {
     if (el.tagName === 'SELECT' && ![...el.options].some(o => o.value === String(val))) el.add(new Option(val, val), 1);
     el.value = val; el.classList.add('ai');
   };
-  ['name', 'country', 'region', 'producer', 'grapes', 'cask', 'abv', 'volume', 'vintage', 'age', 'desc', 'pairing'].forEach(n => set(n, r[n]));
+  ['pron', 'name', 'country', 'region', 'producer', 'grapes', 'cask', 'abv', 'volume', 'vintage', 'age', 'desc', 'pairing'].forEach(n => set(n, r[n]));
   set('type_' + k, r.type);
   (k === 'wine' ? WINE_TASTE : WHISKY_TASTE).forEach(key => {
     const v = Math.round(Number(r[key])); if (!(v >= 1 && v <= 5)) return;
@@ -383,7 +384,7 @@ async function save() {
   if (!name) { err.hidden = false; err.textContent = t('needName'); $('#f_name').focus(); return; }
   const k = F.kind;
   const o = { ...(F.it || {}), kind: k };
-  ['name', 'country', 'region', 'producer', 'abv', 'volume', 'price', 'qty', 'purchased', 'shop', 'location', 'desc', 'pairing', 'note', 'sources'].forEach(n => {
+  ['pron', 'name', 'country', 'region', 'producer', 'abv', 'volume', 'price', 'qty', 'purchased', 'shop', 'location', 'desc', 'pairing', 'note', 'sources'].forEach(n => {
     let x = String(fd.get(n) ?? '').trim();
     o[n] = x === '' ? null : NUM.includes(n) ? Number(x) : x;
   });
@@ -476,7 +477,7 @@ function download(name, text, type) {
   setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
 }
 function exportCsv() {
-  const cols = ['kind', 'name', 'type', 'vintage', 'age', 'country', 'region', 'producer', 'grapes', 'cask', 'abv', 'volume', 'sweetness', 'acidity', 'tannin', 'body', 'finish', 'smoky', 'fruity', 'spicy', 'opened', 'remaining', 'price', 'qty', 'purchased', 'shop', 'location', 'desc', 'pairing', 'note', 'created'];
+  const cols = ['kind', 'pron', 'name', 'type', 'vintage', 'age', 'country', 'region', 'producer', 'grapes', 'cask', 'abv', 'volume', 'sweetness', 'acidity', 'tannin', 'body', 'finish', 'smoky', 'fruity', 'spicy', 'opened', 'remaining', 'price', 'qty', 'purchased', 'shop', 'location', 'desc', 'pairing', 'note', 'created'];
   const q = v => { v = v == null ? '' : String(v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
   const csv = '﻿' + [cols.join(','), ...S.items.map(it => cols.map(c => q(it[c])).join(','))].join('\n');
   download(`sool-gotgan-${today()}.csv`, csv, 'text/csv');
@@ -504,7 +505,7 @@ async function importJson(e) {
 function camIcon() { return `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>`; }
 
 /* ---------------- events & start ---------------- */
-const VERSION = '0.1.1';
+const VERSION = '0.2.0';
 document.querySelectorAll('[data-f]').forEach(b => b.onclick = () => {
   S.filter = b.dataset.f; document.querySelectorAll('[data-f]').forEach(x => x.setAttribute('aria-pressed', x === b)); render();
 });

@@ -6,7 +6,8 @@ export const MODELS = {
 
 const SCHEMA_HINT = `{
   "kind": "wine" | "whisky",
-  "name": "label name as printed, e.g. 'Château Talbot 2018' or 'Lagavulin 16'",
+  "name": "label name as printed, in the original language, e.g. 'Château Talbot 2018' or 'Lagavulin 16'",
+  "pron": "how to say the name — see PRONUNCIATION below",
   "type": one of WINE_TYPES or WHISKY_TYPES,
   "vintage": number or null,         // wine only
   "age": number or null,             // whisky age statement in years
@@ -24,6 +25,9 @@ const SCHEMA_HINT = `{
 }`;
 
 function prompt(lang, types) {
+  const PRON = lang === 'ko'
+    ? 'Write the full "name" as a Korean speaker would say it aloud, in Hangul only, following the original-language pronunciation (French/Italian/Spanish/German as natives say it, the way Korean wine shops usually transliterate it). Keep vintage/age numbers as digits. e.g. "Château Talbot 2018" → "샤토 탈보 2018", "Albert Bichot Chablis Domaine Long-Depaquit 2022" → "알베르 비쇼 샤블리 도멘 롱 드파키 2022", "Lagavulin 16" → "라가불린 16".'
+    : 'An easy English phonetic respelling of the name for someone who does not speak the label language, e.g. "Château Talbot" → "shah-TOH tal-BOH". Use null if the name is already plain English.';
   const L = lang === 'ko' ? 'Korean (한국어). Keep proper nouns (producer, region, grape) in their usual Korean spelling followed by the original in parentheses the first time, e.g. "생쥘리앙(Saint-Julien)".' : 'English.';
   return `You are a sommelier and whisky specialist cataloguing a private home cellar.
 Look at the bottle/label photo. Identify the exact product (producer, cuvée/expression, vintage or age).
@@ -32,6 +36,8 @@ Then use web search to confirm the facts and gather the producer's or a reputabl
 Taste scales (1 = very light/low, 5 = very strong/high). For wine fill sweetness, acidity, tannin, body, finish; leave smoky/fruity/spicy null.
 For whisky fill smoky, sweetness, fruity, spicy, body; leave acidity/tannin/finish null.
 Use null for anything you cannot determine. Never invent a vintage or age that is not on the label.
+
+PRONUNCIATION ("pron"): ${PRON}
 
 Allowed "type" values — wine: ${JSON.stringify(types.wine)}; whisky: ${JSON.stringify(types.whisky)}.
 Write "desc" and "pairing" (and "region"/"country" names) in ${L}
