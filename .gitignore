@@ -1,0 +1,10 @@
+# 개인 데이터·비밀값은 올리지 않습니다
+*.local.*
+backup/
+cellar-backup-*.json
+cellar-*.csv
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+__pycache__/

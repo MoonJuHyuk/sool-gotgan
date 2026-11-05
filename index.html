@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>와인·위스키 창고</title>
+<meta name="description" content="집에 있는 와인과 위스키를 라벨 사진으로 정리하는 개인 술 창고 앱 · Your home wine & whisky cellar, catalogued from label photos.">
+<meta name="theme-color" content="#EFF1EE" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#111513" media="(prefers-color-scheme: dark)">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Cellar">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nanum+Myeongjo:wght@800&family=IBM+Plex+Sans+KR:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap">
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+<header class="top gutter">
+  <div class="wrap">
+    <div class="titlebar">
+      <div>
+        <h1 id="title">와인·위스키 창고</h1>
+        <div class="ledger" id="ledger">&nbsp;</div>
+      </div>
+      <button class="iconbtn" id="setBtn" aria-label="설정">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>
+      </button>
+    </div>
+    <div class="bar">
+      <div class="seg" role="group">
+        <button data-f="all" aria-pressed="true">전체</button>
+        <button data-f="wine" aria-pressed="false">와인</button>
+        <button data-f="whisky" aria-pressed="false">위스키</button>
+      </div>
+      <input class="search" id="q" type="search" aria-label="search">
+      <select class="sort" id="sort" aria-label="sort"></select>
+    </div>
+  </div>
+</header>
+
+<main class="gutter">
+  <div class="wrap">
+    <div class="banner" id="banner" hidden></div>
+    <div id="grid" class="grid" aria-live="polite"></div>
+    <div id="status" class="empty"><strong>…</strong></div>
+  </div>
+</main>
+
+<button class="fab" id="fab" aria-label="술 등록">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>
+</button>
+
+<div class="overlay" id="overlay" hidden><div class="sheet" id="sheet" role="dialog" aria-modal="true"></div></div>
+<div class="toast" id="toast" role="status" hidden></div>
+
+<script type="module" src="js/app.js"></script>
+</body>
+</html>
