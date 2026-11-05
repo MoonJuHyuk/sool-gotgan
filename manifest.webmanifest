@@ -1,6 +1,6 @@
 {
-  "name": "와인·위스키 창고 · Cellar",
-  "short_name": "Cellar",
+  "name": "술곳간 · Sool Gotgan",
+  "short_name": "술곳간",
   "description": "집에 있는 와인과 위스키를 라벨 사진으로 정리하는 개인 술 창고",
   "lang": "ko",
   "start_url": "./",

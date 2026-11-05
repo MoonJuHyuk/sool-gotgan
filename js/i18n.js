@@ -1,7 +1,7 @@
 // 화면 문구 (한국어 / English)
 export const STR = {
   ko: {
-    appName: '와인·위스키 창고',
+    appName: '술곳간',
     all: '전체', wine: '와인', whisky: '위스키',
     search: '이름·생산자·품종·지역 검색',
     sortRecent: '최근 등록순', sortName: '이름순', sortPrice: '가격 높은순', sortVintage: '빈티지 오래된순',
@@ -50,7 +50,7 @@ export const STR = {
     example: '예시',
   },
   en: {
-    appName: 'Cellar',
+    appName: 'Sool Gotgan',
     all: 'All', wine: 'Wine', whisky: 'Whisky',
     search: 'Search name, producer, grape, region',
     sortRecent: 'Recently added', sortName: 'Name', sortPrice: 'Price (high first)', sortVintage: 'Vintage (oldest first)',

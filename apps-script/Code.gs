@@ -1,5 +1,5 @@
 /**
- * Cellar · 와인·위스키 창고 — Google Sheets backend (Apps Script)
+ * 술곳간 · Sool Gotgan — Google Sheets backend (Apps Script)
  *
  * 이 스크립트는 구글시트에 붙어서(확장 프로그램 > Apps Script) 앱의 저장소 역할을 합니다.
  * This script lives inside your Google Sheet and stores the app's data there.
@@ -11,10 +11,10 @@
  *   4) 함수 목록에서 connectLink 실행 → 실행 로그의 링크를 폰에서 열기
  */
 
-const APP_URL = 'https://moonjuhyuk.github.io/cellar-app/'; // GitHub Pages 주소 (바뀌면 수정)
+const APP_URL = 'https://moonjuhyuk.github.io/sool-gotgan/'; // GitHub Pages 주소 (바뀌면 수정)
 const SHEET_NAME = 'Bottles';
 const SUMMARY_NAME = '요약';
-const PHOTO_FOLDER = 'Cellar Photos';
+const PHOTO_FOLDER = '술곳간 사진';
 
 // 열 순서 = 앱이 읽고 쓰는 순서. 바꾸지 마세요. (Column order the app relies on.)
 const FIELDS = [
@@ -114,7 +114,7 @@ function resetSecret() {
 /* ---------------- web app ---------------- */
 
 function doGet() {
-  return ContentService.createTextOutput('Cellar backend is running. 앱에서 연결해 주세요.');
+  return ContentService.createTextOutput('술곳간 backend is running. 앱에서 연결해 주세요.');
 }
 
 function doPost(e) {

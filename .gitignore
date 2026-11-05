@@ -1,8 +1,8 @@
 # 개인 데이터·비밀값은 올리지 않습니다
 *.local.*
 backup/
-cellar-backup-*.json
-cellar-*.csv
+sool-gotgan-backup-*.json
+sool-gotgan-*.csv
 .DS_Store
 Thumbs.db
 desktop.ini

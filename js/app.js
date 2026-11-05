@@ -436,7 +436,7 @@ function openSettings() {
     <section><p class="h3">${t('backup')}</p>
       <div class="row"><button class="btn" id="csvBtn">${t('exportCsv')}</button><button class="btn" id="jsonBtn">${t('exportJson')}</button>
       <label class="btn" for="impIn">${t('importJson')}</label><input id="impIn" type="file" accept="application/json,.json" hidden></div></section>
-    <p class="hint">Cellar · v${VERSION}</p>
+    <p class="hint">술곳간 · Sool Gotgan · v${VERSION}</p>
   </div>`);
   document.querySelectorAll('[data-l]').forEach(b => b.onclick = () => { setLang(b.dataset.l); chrome(); render(); openSettings(); });
   if (sheet) {
@@ -464,7 +464,7 @@ function openSettings() {
     $('#keySave').disabled = false;
   };
   $('#csvBtn').onclick = exportCsv;
-  $('#jsonBtn').onclick = () => download(`cellar-backup-${today()}.json`, JSON.stringify({ app: 'cellar', version: 1, exported: new Date().toISOString(), items: S.items }, null, 2), 'application/json');
+  $('#jsonBtn').onclick = () => download(`sool-gotgan-backup-${today()}.json`, JSON.stringify({ app: 'cellar', version: 1, exported: new Date().toISOString(), items: S.items }, null, 2), 'application/json');
   $('#impIn').onchange = importJson;
 }
 const today = () => new Date().toISOString().slice(0, 10);
@@ -478,7 +478,7 @@ function exportCsv() {
   const cols = ['kind', 'name', 'type', 'vintage', 'age', 'country', 'region', 'producer', 'grapes', 'cask', 'abv', 'volume', 'sweetness', 'acidity', 'tannin', 'body', 'finish', 'smoky', 'fruity', 'spicy', 'opened', 'remaining', 'price', 'qty', 'purchased', 'shop', 'location', 'desc', 'pairing', 'note', 'created'];
   const q = v => { v = v == null ? '' : String(v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
   const csv = '﻿' + [cols.join(','), ...S.items.map(it => cols.map(c => q(it[c])).join(','))].join('\n');
-  download(`cellar-${today()}.csv`, csv, 'text/csv');
+  download(`sool-gotgan-${today()}.csv`, csv, 'text/csv');
 }
 async function importJson(e) {
   const f = e.target.files[0]; if (!f) return;
