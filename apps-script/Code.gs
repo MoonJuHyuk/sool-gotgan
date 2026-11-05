@@ -12,6 +12,8 @@
  */
 
 const APP_URL = 'https://moonjuhyuk.github.io/sool-gotgan/'; // GitHub Pages 주소 (바뀌면 수정)
+// 배포 후 [배포 > 배포 관리]의 웹 앱 URL(…/exec)을 여기에 붙여넣으세요. (편집기에서 실행하면 테스트용 /dev 주소가 나오기 때문)
+const WEB_APP_URL = '';
 const SHEET_NAME = 'Bottles';
 const SUMMARY_NAME = '요약';
 const PHOTO_FOLDER = '술곳간 사진';
@@ -98,8 +100,9 @@ function setup() {
 
 /** 배포 후 실행: 폰·PC에서 열 연결 링크를 로그에 출력합니다. */
 function connectLink() {
-  const url = ScriptApp.getService().getUrl();
+  const url = WEB_APP_URL || ScriptApp.getService().getUrl();
   if (!url) { Logger.log('❌ 아직 웹 앱으로 배포되지 않았습니다. [배포 > 새 배포]를 먼저 하세요.'); return; }
+  if (!/\/exec$/.test(url)) { Logger.log('❌ [배포 > 배포 관리]에서 웹 앱 URL(…/exec)을 복사해 맨 위 WEB_APP_URL에 붙여넣고 저장한 뒤 다시 실행하세요.'); return; }
   const secret = PropertiesService.getScriptProperties().getProperty('SECRET');
   const token = Utilities.base64EncodeWebSafe(JSON.stringify({ u: url, s: secret }));
   Logger.log('📱 이 링크를 폰·PC에서 한 번 열면 연결됩니다 (남에게 공유하지 마세요):\n' + APP_URL + '#connect=' + token);
