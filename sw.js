@@ -1,5 +1,5 @@
 // 오프라인에서도 앱이 열리도록 화면 파일을 저장해 둡니다.
-const VERSION = 'soolgotgan-v0.3.3';
+const VERSION = 'soolgotgan-v0.3.4';
 const SHELL = [
   './', 'index.html', 'css/app.css', 'js/app.js', 'js/i18n.js', 'js/store.js', 'js/ai.js',
   'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png',

@@ -2,7 +2,7 @@ import { t, getLang, setLang, STR } from './i18n.js';
 import { LS, LocalStore, makeSheetStore, photoUrl, photoFallback, parseConnect, connectLinkFor } from './store.js';
 import { readLabel, MODELS } from './ai.js';
 
-const VERSION = '0.3.3';
+const VERSION = '0.3.4';
 const $ = s => document.querySelector(s);
 const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const has = v => v !== undefined && v !== null && v !== '';
@@ -21,7 +21,7 @@ const tasteLabel = (kind, k) => t(kind !== 'wine' && k === 'sweetness' ? 't_swee
 const NUM = ['vintage', 'age', 'abv', 'volume', 'price', 'qty', 'remaining'];
 const typeList = kind => STR[getLang()][kind === 'whisky' ? 'whiskyTypes' : kind === 'other' ? 'otherTypes' : 'wineTypes'];
 
-const S = { items: [], filter: 'all', q: '', sort: LS.get('cellar.sort', 'recent'), store: null, conn: null, cfg: {}, loaded: false, offline: false, pixel: LS.get('cellar.pixel', true) };
+const S = { items: [], filter: 'all', q: '', sort: LS.get('cellar.sort', 'recent'), store: null, conn: null, cfg: {}, loaded: false, offline: false, pixel: LS.get('cellar.pixel2', false) };
 
 /* ---------------- 테마 · 도트 그림 ---------------- */
 const themeOf = f => f === 'wine' ? 'wine' : f === 'other' ? 'other' : f === 'all' ? 'all' : 'whisky';
@@ -54,7 +54,7 @@ function applyTheme() {
 const pxCache = new Map();
 async function listPhoto(photo) {
   if (!photo) return null;
-  if (!S.pixel) return photoUrl(photo, 500);
+  if (!S.pixel) return photoUrl(photo, Math.min(1000, Math.round(400 * (window.devicePixelRatio || 2))));
   if (!photo.startsWith('local:')) return photoUrl(photo, 80);
   if (pxCache.has(photo)) return pxCache.get(photo);
   const big = await photoUrl(photo); if (!big) return null;
@@ -526,7 +526,7 @@ function openSettings() {
     <p class="hint">술곳간 · Sool Gotgan · v${VERSION} · 글꼴: 갈무리 (OFL)</p>
   </div>`);
   document.querySelectorAll('[data-l]').forEach(b => b.onclick = () => { setLang(b.dataset.l); chrome(); render(); openSettings(); });
-  $('#pxIn').onchange = e => { S.pixel = e.target.checked; LS.set('cellar.pixel', S.pixel); render(); };
+  $('#pxIn').onchange = e => { S.pixel = e.target.checked; LS.set('cellar.pixel2', S.pixel); render(); };
   if (sheet) {
     $('#shareBtn').onclick = async () => {
       const link = connectLinkFor(S.conn);
