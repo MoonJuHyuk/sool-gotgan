@@ -1,5 +1,5 @@
 // 오프라인에서도 앱이 열리도록 화면 파일을 저장해 둡니다.
-const VERSION = 'soolgotgan-v0.3.1';
+const VERSION = 'soolgotgan-v0.3.2';
 const SHELL = [
   './', 'index.html', 'css/app.css', 'js/app.js', 'js/i18n.js', 'js/store.js', 'js/ai.js',
   'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png',
@@ -21,7 +21,8 @@ self.addEventListener('fetch', e => {
 
   // 앱 화면: 네트워크 우선, 끊기면 저장본
   if (url.origin === location.origin) {
-    e.respondWith(fetch(req).then(res => {
+    // 'no-cache': 휴대폰 브라우저에 남은 예전 파일 대신 항상 서버에 새 버전이 있는지 확인
+    e.respondWith(fetch(req, { cache: 'no-cache' }).then(res => {
       const copy = res.clone();
       caches.open(VERSION).then(c => c.put(req, copy));
       return res;

@@ -2,7 +2,7 @@ import { t, getLang, setLang, STR } from './i18n.js';
 import { LS, LocalStore, makeSheetStore, photoUrl, photoFallback, parseConnect, connectLinkFor } from './store.js';
 import { readLabel, MODELS } from './ai.js';
 
-const VERSION = '0.3.1';
+const VERSION = '0.3.2';
 const $ = s => document.querySelector(s);
 const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const has = v => v !== undefined && v !== null && v !== '';
@@ -603,4 +603,8 @@ pickStore();
 chrome();
 render();
 load();
-if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('sw.js').catch(() => {});
+if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(reg => {
+  // 새 버전이 설치되면 한 번 자동으로 새로고침
+  reg.addEventListener('updatefound', () => { const w = reg.installing; w && w.addEventListener('statechange', () => { if (w.state === 'activated' && navigator.serviceWorker.controller && !sessionStorage.getItem('sg.reloaded')) { sessionStorage.setItem('sg.reloaded', '1'); location.reload(); } }); });
+  reg.update().catch(() => {});
+}).catch(() => {});
