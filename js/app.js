@@ -411,7 +411,8 @@ async function save() {
     onClose = null; F = null;
     openDetail(saved.id);
   } catch (e) {
-    err.hidden = false; err.textContent = t('saveFail');
+    console.error(e);
+    err.hidden = false; err.textContent = t('saveFail') + ' (' + (e && (e.message || e.name) || e) + ')';
     btn.disabled = false; btn.textContent = t(F.it ? 'saveEdit' : 'save');
   }
 }
@@ -503,7 +504,7 @@ async function importJson(e) {
 function camIcon() { return `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>`; }
 
 /* ---------------- events & start ---------------- */
-const VERSION = '0.1.0';
+const VERSION = '0.1.1';
 document.querySelectorAll('[data-f]').forEach(b => b.onclick = () => {
   S.filter = b.dataset.f; document.querySelectorAll('[data-f]').forEach(x => x.setAttribute('aria-pressed', x === b)); render();
 });

@@ -45,7 +45,8 @@ export const LocalStore = {
     if (photoBlob) {
       if (prev?.photo?.startsWith('local:')) await idbDel('photos', prev.photo);
       o.photo = 'local:' + uid();
-      await idbPut('photos', o.photo, photoBlob);
+      // Blob 대신 ArrayBuffer로 저장: 아이폰 Safari는 IndexedDB에 Blob 저장이 실패하는 경우가 있음
+      await idbPut('photos', o.photo, { buf: await photoBlob.arrayBuffer(), type: photoBlob.type || 'image/jpeg' });
     }
     await idbPut('items', o.id, o);
     return o;
@@ -113,8 +114,9 @@ export async function photoUrl(photo, size = 1200) {
   if (!photo) return null;
   if (photo.startsWith('local:')) {
     if (blobUrls.has(photo)) return blobUrls.get(photo);
-    const b = await idbGet('photos', photo).catch(() => null);
+    let b = await idbGet('photos', photo).catch(() => null);
     if (!b) return null;
+    if (b.buf) b = new Blob([b.buf], { type: b.type || 'image/jpeg' });
     const u = URL.createObjectURL(b);
     blobUrls.set(photo, u);
     return u;
