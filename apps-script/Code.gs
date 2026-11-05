@@ -42,6 +42,7 @@ const FIELDS = [
   ['smoky', '스모키 Smoky'],
   ['fruity', '과일향 Fruity'],
   ['spicy', '스파이시 Spicy'],
+  ['aroma', '향 Aroma'],
   ['opened', '개봉 Opened'],
   ['remaining', '남은양% Left'],
   ['price', '구매가 Price'],
@@ -50,6 +51,7 @@ const FIELDS = [
   ['shop', '구매처 Shop'],
   ['location', '보관위치 Location'],
   ['desc', '설명 Description'],
+  ['story', '양조장·가문 이야기 House story'],
   ['pairing', '페어링 Pairing'],
   ['note', '나의 메모 My note'],
   ['photo', '사진 Photo'],
@@ -58,7 +60,7 @@ const FIELDS = [
   ['updated', '수정일 Updated'],
 ];
 const KEYS = FIELDS.map(f => f[0]);
-const NUMERIC = ['vintage','age','abv','volume','sweetness','acidity','tannin','body','finish','smoky','fruity','spicy','remaining','price','qty'];
+const NUMERIC = ['vintage','age','abv','volume','sweetness','acidity','tannin','body','finish','smoky','fruity','spicy','aroma','remaining','price','qty'];
 
 /* ---------------- one-time setup ---------------- */
 
@@ -83,14 +85,16 @@ function setup() {
   if (!sm) sm = ss.insertSheet(SUMMARY_NAME, 1);
   const col = k => columnLetter_(KEYS.indexOf(k) + 1);
   const K = col('kind'), Q = col('qty'), P = col('price');
-  sm.getRange('A1:C4').setValues([
-    ['항목', '와인 wine', '위스키 whisky'],
-    ['보유 병 수', `=SUMIF(${SHEET_NAME}!${K}2:${K},"wine",${SHEET_NAME}!${Q}2:${Q})`, `=SUMIF(${SHEET_NAME}!${K}2:${K},"whisky",${SHEET_NAME}!${Q}2:${Q})`],
-    ['종류 수', `=COUNTIF(${SHEET_NAME}!${K}2:${K},"wine")`, `=COUNTIF(${SHEET_NAME}!${K}2:${K},"whisky")`],
-    ['총 구매가(원)', `=SUMPRODUCT((${SHEET_NAME}!${K}2:${K}="wine")*N(+${SHEET_NAME}!${P}2:${P})*N(+${SHEET_NAME}!${Q}2:${Q}))`, `=SUMPRODUCT((${SHEET_NAME}!${K}2:${K}="whisky")*N(+${SHEET_NAME}!${P}2:${P})*N(+${SHEET_NAME}!${Q}2:${Q}))`],
+  const kinds = [['wine', '와인 wine'], ['whisky', '위스키 whisky'], ['other', '기타 other']];
+  const R = (k, f) => f.replace(/KIND/g, k);
+  sm.getRange(1, 1, 4, 4).setValues([
+    ['항목'].concat(kinds.map(k => k[1])),
+    ['보유 병 수'].concat(kinds.map(k => R(k[0], `=SUMIF(${SHEET_NAME}!${K}2:${K},"KIND",${SHEET_NAME}!${Q}2:${Q})`))),
+    ['종류 수'].concat(kinds.map(k => R(k[0], `=COUNTIF(${SHEET_NAME}!${K}2:${K},"KIND")`))),
+    ['총 구매가(원)'].concat(kinds.map(k => R(k[0], `=SUMPRODUCT((${SHEET_NAME}!${K}2:${K}="KIND")*N(+${SHEET_NAME}!${P}2:${P})*N(+${SHEET_NAME}!${Q}2:${Q}))`))),
   ]);
-  sm.getRange('A1:C1').setFontWeight('bold').setBackground('#2E3531').setFontColor('#FFFFFF');
-  sm.getRange('B2:C4').setNumberFormat('#,##0');
+  sm.getRange('A1:D1').setFontWeight('bold').setBackground('#2E3531').setFontColor('#FFFFFF');
+  sm.getRange('B2:D4').setNumberFormat('#,##0');
   sm.setColumnWidth(1, 140);
 
   const props = PropertiesService.getScriptProperties();

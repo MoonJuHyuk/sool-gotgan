@@ -1,8 +1,10 @@
 // 오프라인에서도 앱이 열리도록 화면 파일을 저장해 둡니다.
-const VERSION = 'soolgotgan-v0.2.0';
+const VERSION = 'soolgotgan-v0.3.0';
 const SHELL = [
   './', 'index.html', 'css/app.css', 'js/app.js', 'js/i18n.js', 'js/store.js', 'js/ai.js',
   'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png',
+  'fonts/Galmuri11.woff2', 'fonts/Galmuri11-Bold.woff2', 'fonts/Galmuri9.woff2',
+  ...['a-red', 'a-white', 'a-whisky', 'c-red', 'c-white', 'e2-gourd', 'e2-tok', 'e2-brandy', 'a-cam', 'a-gear', 'c-gear', 'c-cam'].map(n => `icons/px/${n}.png`),
 ];
 
 self.addEventListener('install', e => {

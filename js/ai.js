@@ -5,20 +5,21 @@ export const MODELS = {
 };
 
 const SCHEMA_HINT = `{
-  "kind": "wine" | "whisky",
+  "kind": "wine" | "whisky" | "other",   // other = sake, makgeolli, soju, brandy, gin, rum, liqueur, beer…
   "name": "label name as printed, in the original language, e.g. 'Château Talbot 2018' or 'Lagavulin 16'",
   "pron": "how to say the name — see PRONUNCIATION below",
-  "type": one of WINE_TYPES or WHISKY_TYPES,
+  "type": one of the allowed types for that kind,
   "vintage": number or null,         // wine only
-  "age": number or null,             // whisky age statement in years
+  "age": number or null,             // age statement in years (whisky, brandy…)
   "country": string, "region": string,
-  "producer": string,                // winery / château, or distillery for whisky
+  "producer": string,                // winery / château / brewery / distillery
   "grapes": string or null,          // wine: grape varieties, comma separated
   "cask": string or null,            // whisky: cask types
   "abv": number or null, "volume": number or null,   // ml
-  "sweetness": 1-5, "acidity": 1-5 or null, "tannin": 1-5 or null, "body": 1-5, "finish": 1-5 or null,
-  "smoky": 1-5 or null, "fruity": 1-5 or null, "spicy": 1-5 or null,
-  "desc": "3-5 sentence introduction: producer, place, style, typical aromas and flavours, drinking window if wine",
+  "sweetness": 1-5 or null, "acidity": 1-5 or null, "tannin": 1-5 or null, "body": 1-5 or null, "finish": 1-5 or null,
+  "smoky": 1-5 or null, "fruity": 1-5 or null, "spicy": 1-5 or null, "aroma": 1-5 or null,
+  "desc": "3-5 sentence introduction of THIS bottle: style, typical aromas and flavours, drinking window if wine",
+  "story": "2-4 sentences on the producer / distillery / house: founding, history, the family behind it, what it is known for. null if you found nothing reliable",
   "pairing": "2-4 concrete dishes that suit it",
   "confidence": "high" | "medium" | "low",
   "sources": ["url", "..."]
@@ -33,14 +34,20 @@ function prompt(lang, types) {
 Look at the bottle/label photo. Identify the exact product (producer, cuvée/expression, vintage or age).
 Then use web search to confirm the facts and gather the producer's or a reputable retailer's description and tasting notes.
 
-Taste scales (1 = very light/low, 5 = very strong/high). For wine fill sweetness, acidity, tannin, body, finish; leave smoky/fruity/spicy null.
-For whisky fill smoky, sweetness, fruity, spicy, body; leave acidity/tannin/finish null.
-Use null for anything you cannot determine. Never invent a vintage or age that is not on the label.
+Taste scales (1 = very light/low, 5 = very strong/high).
+- wine: sweetness, acidity, tannin, body, finish (others null)
+- whisky: smoky, sweetness, fruity, spicy, body (others null)
+- other: sweetness, acidity, body, aroma (intensity of aroma), finish (others null)
+
+ACCURACY RULE — the owner will fill gaps by hand, so a blank is better than a guess:
+- Only fill a field when the label shows it or a source you found states it (or, for taste scales, when sources describe that trait).
+- If web search does not give you a reliable answer for a field, set it to null. Do NOT estimate, infer from similar products, or use typical values.
+- Never invent a vintage, age, ABV, region or grape that is not on the label or in a source.
 
 PRONUNCIATION ("pron"): ${PRON}
 
-Allowed "type" values — wine: ${JSON.stringify(types.wine)}; whisky: ${JSON.stringify(types.whisky)}.
-Write "desc" and "pairing" (and "region"/"country" names) in ${L}
+Allowed "type" values — wine: ${JSON.stringify(types.wine)}; whisky: ${JSON.stringify(types.whisky)}; other: ${JSON.stringify(types.other || [])}.
+Write "desc", "story" and "pairing" (and "region"/"country" names) in ${L}
 
 Reply with ONLY one JSON object in a \`\`\`json code block, matching:
 ${SCHEMA_HINT}`;
@@ -63,8 +70,8 @@ export async function readLabel({ key, model, imageBase64, mediaType = 'image/jp
   }];
   const body = {
     model: model || MODELS.sonnet,
-    max_tokens: 2000,
-    tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 3 }],
+    max_tokens: 2500,
+    tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 4 }],
     messages,
   };
   let data;
