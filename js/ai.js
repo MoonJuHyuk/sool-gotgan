@@ -107,3 +107,64 @@ export async function readLabel({ key, model, imageBase64, mediaType = 'image/jp
   out.sources = [...cited].slice(0, 5);
   return out;
 }
+
+// Vivino 평점 찾기 — vivino.com 안에서만 검색하고, 검색 결과에 실제로 나온 Vivino 페이지가 아니면 버림
+const VIVINO_DOMAINS = ['vivino.com'];
+export const vivinoSearchUrl = q => 'https://www.vivino.com/search/wines?q=' + encodeURIComponent(q || '');
+const isVivino = u => { try { return /(^|\.)vivino\.com$/.test(new URL(u).hostname); } catch (e) { return false; } };
+const normUrl = u => { try { const x = new URL(u); return (x.hostname.replace(/^www\./, '') + x.pathname).replace(/\/$/, '').toLowerCase(); } catch (e) { return ''; } };
+
+export async function findVivino({ key, name, producer, vintage, signal }) {
+  if (!key) throw new Error('NO_KEY');
+  if (!name) return null;
+  const q = [producer && !String(name).toLowerCase().includes(String(producer).toLowerCase()) ? producer : '', name, vintage || ''].filter(Boolean).join(' ');
+  const text = `Find this exact wine on Vivino and report its Vivino average rating.
+Wine: ${q}
+
+Search only vivino.com (try the producer + wine name; add the vintage if the first search misses).
+STRICT RULES — a blank is better than a wrong number:
+- Only report a rating you actually saw for THIS wine (same producer and same cuvée) in the search results.
+- "url" must be the vivino.com page of that wine exactly as it appeared in the results.
+- Prefer the rating for the same vintage; if only the wine's overall rating is shown, use it and set "sameVintage": false.
+- If you did not find it, or are not sure it is the same wine, reply with all fields null. Never estimate.
+
+Reply with ONLY one JSON object in a \`\`\`json code block:
+{"rating": number 1.0-5.0 or null, "count": number of ratings or null, "url": "https://www.vivino.com/..." or null, "sameVintage": true | false | null}`;
+  const messages = [{ role: 'user', content: text }];
+  const body = {
+    model: MODELS.haiku,
+    max_tokens: 1200,
+    tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 3, allowed_domains: VIVINO_DOMAINS }],
+    messages,
+  };
+  let data;
+  for (let turn = 0; turn < 3; turn++) {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST', signal,
+      headers: {
+        'content-type': 'application/json',
+        'x-api-key': key,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true',
+      },
+      body: JSON.stringify(body),
+    });
+    data = await res.json().catch(() => ({}));
+    if (!res.ok) { const err = new Error(data?.error?.message || `HTTP ${res.status}`); err.status = res.status; throw err; }
+    if (data.stop_reason !== 'pause_turn') break;
+    body.messages = [...messages, { role: 'assistant', content: data.content }];
+  }
+  const blocks = data.content || [];
+  // 검색 결과에 실제로 나온 Vivino 주소 목록
+  const seen = new Set();
+  blocks.forEach(b => {
+    if (b.type === 'web_search_tool_result' && Array.isArray(b.content)) b.content.forEach(r => r.url && isVivino(r.url) && seen.add(normUrl(r.url)));
+    (b.citations || []).forEach(c => c.url && isVivino(c.url) && seen.add(normUrl(c.url)));
+  });
+  let out;
+  try { out = extractJson(blocks.filter(b => b.type === 'text').map(b => b.text).join('\n')); } catch (e) { return null; }
+  const rating = Math.round(Number(out.rating) * 10) / 10;
+  if (!(rating >= 1 && rating <= 5) || !out.url || !isVivino(out.url) || !seen.has(normUrl(out.url))) return null;
+  const count = Number(out.count);
+  return { rating, count: count > 0 ? Math.round(count) : null, url: out.url, sameVintage: out.sameVintage !== false };
+}

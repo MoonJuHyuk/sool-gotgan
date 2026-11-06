@@ -58,9 +58,13 @@ const FIELDS = [
   ['sources', '출처 Sources'],
   ['created', '등록일 Created'],
   ['updated', '수정일 Updated'],
+  // v0.3.5: 맨 뒤에 붙여서, 예전 스크립트가 돌아가는 중에도 칸이 밀리지 않게 함
+  ['vivino', 'Vivino 평점'],
+  ['vivinoCount', 'Vivino 평가 수'],
+  ['vivinoUrl', 'Vivino 링크'],
 ];
 const KEYS = FIELDS.map(f => f[0]);
-const NUMERIC = ['vintage','age','abv','volume','sweetness','acidity','tannin','body','finish','smoky','fruity','spicy','aroma','remaining','price','qty'];
+const NUMERIC = ['vintage','age','abv','volume','sweetness','acidity','tannin','body','finish','smoky','fruity','spicy','aroma','remaining','price','qty','vivino','vivinoCount'];
 
 /* ---------------- one-time setup ---------------- */
 

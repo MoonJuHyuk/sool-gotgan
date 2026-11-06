@@ -1,8 +1,8 @@
 import { t, getLang, setLang, STR } from './i18n.js';
 import { LS, LocalStore, makeSheetStore, photoUrl, photoFallback, parseConnect, connectLinkFor } from './store.js';
-import { readLabel, MODELS } from './ai.js';
+import { readLabel, findVivino, vivinoSearchUrl, MODELS } from './ai.js';
 
-const VERSION = '0.3.4';
+const VERSION = '0.3.5';
 const $ = s => document.querySelector(s);
 const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const has = v => v !== undefined && v !== null && v !== '';
@@ -18,7 +18,8 @@ const TASTE = {
 };
 const ALL_TASTE = ['sweetness', 'acidity', 'tannin', 'body', 'finish', 'smoky', 'fruity', 'spicy', 'aroma'];
 const tasteLabel = (kind, k) => t(kind !== 'wine' && k === 'sweetness' ? 't_sweet' : 't_' + k);
-const NUM = ['vintage', 'age', 'abv', 'volume', 'price', 'qty', 'remaining'];
+const NUM = ['vintage', 'age', 'abv', 'volume', 'price', 'qty', 'remaining', 'vivino', 'vivinoCount'];
+const vivStar = it => kindOf(it) === 'wine' && has(it.vivino) ? '★' + Number(it.vivino).toFixed(1) : '';
 const typeList = kind => STR[getLang()][kind === 'whisky' ? 'whiskyTypes' : kind === 'other' ? 'otherTypes' : 'wineTypes'];
 
 const S = { items: [], filter: 'all', q: '', sort: LS.get('cellar.sort', 'recent'), store: null, conn: null, cfg: {}, loaded: false, offline: false, pixel: LS.get('cellar.pixel2', false) };
@@ -100,7 +101,7 @@ function chrome() {
   $('#title').textContent = t('appName');
   $('#q').placeholder = t('search');
   document.querySelectorAll('[data-f]').forEach(b => b.textContent = t(b.dataset.f));
-  $('#sort').innerHTML = [['recent', 'sortRecent'], ['name', 'sortName'], ['price', 'sortPrice'], ['vintage', 'sortVintage']]
+  $('#sort').innerHTML = [['recent', 'sortRecent'], ['name', 'sortName'], ['price', 'sortPrice'], ['vintage', 'sortVintage'], ['vivino', 'sortVivino']]
     .map(([v, k]) => `<option value="${v}" ${S.sort === v ? 'selected' : ''}>${t(k)}</option>`).join('');
   $('#fab').setAttribute('aria-label', t('add'));
   $('#setBtn').setAttribute('aria-label', t('settings'));
@@ -110,7 +111,7 @@ function chrome() {
 /* ---------------- 목록 ---------------- */
 const subline = it => {
   const k = kindOf(it), yr = has(it.age) ? it.age + (ko() ? '년' : ' yr') : '';
-  return (k === 'wine' ? [it.vintage, it.region || it.country] : [yr, it.region || it.country]).filter(has).join(' · ');
+  return (k === 'wine' ? [it.vintage, it.region || it.country, vivStar(it)] : [yr, it.region || it.country]).filter(has).join(' · ');
 };
 function visible() {
   const q = S.q.trim().toLowerCase();
@@ -121,6 +122,7 @@ function visible() {
     name: (a, b) => String(a.pron || a.name || '').localeCompare(String(b.pron || b.name || ''), getLang()),
     price: (a, b) => (Number(b.price) || 0) - (Number(a.price) || 0),
     vintage: (a, b) => (Number(a.vintage) || 9999) - (Number(b.vintage) || 9999),
+    vivino: (a, b) => (Number(b.vivino) || 0) - (Number(a.vivino) || 0),
   };
   return list.sort(by[S.sort] || by.recent);
 }
@@ -257,6 +259,7 @@ async function openDetail(id) {
         <div><span class="chip">${esc(it.type || t(k))}</span></div>
         <div><h2>${esc(it.pron || it.name)}</h2>${it.pron ? `<p class="orig">${esc(it.name)}</p>` : ''}</div>
         ${dl(rows) ? `<dl>${dl(rows)}</dl>` : ''}
+        ${k === 'wine' ? `<div id="vivBox">${vivinoHTML(it)}</div>` : ''}
         ${T.length ? `<div><p class="h3">${t('taste')}</p><div class="taste">${T.map(x => `<span>${tasteLabel(k, x)}</span>${pips(it[x])}<span class="v">${it[x]}/5</span>`).join('')}</div></div>` : ''}
         ${has(it.desc) ? `<div><p class="h3">${t('about')}</p><p class="prose">${esc(it.desc)}</p></div>` : ''}
         ${has(it.story) ? `<div><p class="h3">${t('story')}</p><p class="prose">${esc(it.story)}</p></div>` : ''}
@@ -271,6 +274,7 @@ async function openDetail(id) {
         ${srcs.length ? `<details class="srcs"><summary>${t('srcToggle', srcs.length)}</summary><ul>${srcs.map(u => `<li><a href="${esc(u)}" target="_blank" rel="noopener">${esc(hostOf(u))}</a></li>`).join('')}</ul></details>` : ''}
       </div>
     </div>`);
+  if (k === 'wine') wireVivino(it);
   $('#qMinus').onclick = () => bump(it.id, -1);
   $('#qPlus').onclick = () => bump(it.id, 1);
   $('#dEdit').onclick = () => openForm(it.id);
@@ -285,6 +289,52 @@ async function openDetail(id) {
   };
   const u = await photoUrl(it.photo, 1400);
   if (u) { const img = new Image(); img.alt = it.name || ''; img.className = 'photo'; img.onload = () => { const p = $('#dPhoto'); if (p) { p.innerHTML = ''; p.appendChild(img); } }; img.onerror = () => { const f = photoFallback(it.photo); if (f && img.src !== f) img.src = f; }; img.src = u; }
+}
+/* ---------------- Vivino 평점 ---------------- */
+const vivQuery = it => [it.producer && !String(it.name || '').toLowerCase().includes(String(it.producer).toLowerCase()) ? it.producer : '', it.name, it.vintage].filter(has).join(' ');
+function vivinoHTML(it, busy) {
+  const q = vivQuery(it);
+  const findBtn = S.cfg.claudeKey ? `<button class="btn" id="vivFind" ${busy ? 'disabled' : ''}>${busy ? t('vivSearching') : t(has(it.vivino) ? 'vivRefresh' : 'vivFind')}</button>` : '';
+  const top = has(it.vivino)
+    ? `<a class="vivlink" href="${esc(it.vivinoUrl || vivinoSearchUrl(q))}" target="_blank" rel="noopener"><b>★ ${Number(it.vivino).toFixed(1)}</b>${has(it.vivinoCount) ? ` <span class="hint">(${t('vivCount', Number(it.vivinoCount).toLocaleString())})</span>` : ''}</a>`
+    : `<span class="hint">${t('vivNone')}</span>`;
+  return `<p class="h3">${t('vivino')}</p><div class="vivrow">${top}</div>
+    <div class="row2"><a class="btn" href="${esc(vivinoSearchUrl(q))}" target="_blank" rel="noopener">${t('vivOpen')}</a>${findBtn}</div><p class="hint" id="vivMsg"></p>`;
+}
+function wireVivino(it) {
+  const b = $('#vivFind'); if (!b) return;
+  b.onclick = async () => {
+    $('#vivBox').innerHTML = vivinoHTML(it, true);
+    let msg = '';
+    try {
+      const v = await findVivino({ key: S.cfg.claudeKey, name: it.name, producer: it.producer, vintage: it.vintage });
+      if (v) {
+        const saved = await S.store.save({ ...it, vivino: v.rating, vivinoCount: v.count, vivinoUrl: v.url });
+        Object.assign(it, saved); cacheItems(); render();
+        msg = v.sameVintage ? '' : t('vivOtherVintage');
+      } else msg = t('vivNotFound');
+    } catch (e) { msg = t('vivFail') + (e?.message ? ` (${e.message})` : ''); }
+    const box = $('#vivBox'); if (!box) return;
+    box.innerHTML = vivinoHTML(it); wireVivino(it);
+    if (msg) $('#vivMsg').textContent = msg;
+  };
+}
+async function formVivino(r, ctl) {
+  const fm = $('#bf'); if (!fm) return;
+  const st = () => $('#vivState');
+  const name = fm.elements.name.value.trim() || r.name; if (!name) return;
+  if (has(fm.elements.vivino.value) && !fm.elements.vivino.classList.contains('ai')) return; // 직접 넣은 값은 그대로
+  if (st()) st().textContent = t('vivSearching');
+  try {
+    const v = await findVivino({ key: S.cfg.claudeKey, name, producer: fm.elements.producer.value.trim() || r.producer, vintage: fm.elements.vintage.value || r.vintage, signal: ctl.signal });
+    if (ctl.signal.aborted || !$('#bf')) return;
+    const put = (n, val) => { const el = fm.elements[n]; if (!el || F.touched.has(n)) return; el.value = val ?? ''; el.classList.toggle('ai', has(val)); };
+    if (v) { put('vivino', v.rating); put('vivinoCount', v.count); put('vivinoUrl', v.url); }
+    if (st()) st().textContent = v ? t('vivFound', v.rating.toFixed(1)) + (v.sameVintage ? '' : ' · ' + t('vivOtherVintage')) : t('vivNotFound');
+  } catch (e) {
+    if (ctl.signal.aborted || e.name === 'AbortError') return;
+    if (st()) st().textContent = t('vivFail');
+  }
 }
 function cacheItems() { if (S.store.kind === 'sheet') LS.set('cellar.cache', S.items); }
 let bumpBusy = false;
@@ -374,6 +424,9 @@ function openForm(id, file) {
         ${field('cask', t('f_cask'), v('cask'), { only: 'whisky' })}
         ${field('abv', t('f_abv'), v('abv'), { type: 'number', step: '0.1' })}
         ${field('volume', t('f_volume'), v('volume'), { type: 'number', ph: '750' })}
+        ${field('vivino', t('f_vivino'), v('vivino'), { type: 'number', step: '0.1', ph: '4.1', only: 'wine' })}
+        ${field('vivinoCount', t('f_vivinoCount'), v('vivinoCount'), { type: 'number', only: 'wine' })}
+        ${field('vivinoUrl', t('f_vivinoUrl'), v('vivinoUrl'), { type: 'url', full: true, only: 'wine' })}
       </fieldset>
       <fieldset><legend>${t('sTaste')}</legend>
         ${KINDS.map(k2 => TASTE[k2].map(x => rateRow(k2, x, same(k2) ? v(x) : '')).join('')).join('')}
@@ -435,7 +488,8 @@ async function runAI() {
     });
     if (ctl.signal.aborted || !$('#bf')) return;
     fillFromAI(r);
-    box.innerHTML = `<div class="aistate ok"><div>${t('aiDone')}${r.confidence === 'low' ? ' ⚠︎' : ''}</div></div>`;
+    box.innerHTML = `<div class="aistate ok"><div>${t('aiDone')}${r.confidence === 'low' ? ' ⚠︎' : ''}<div class="hint" id="vivState"></div></div></div>`;
+    if (F.kind === 'wine') formVivino(r, ctl);
   } catch (e) {
     if (ctl.signal.aborted || e.name === 'AbortError') return;
     box.innerHTML = `<div class="aistate err"><div><strong>${t('aiFail')}</strong><br><span class="hint">${esc(e.message || '')}</span><br><button type="button" class="btn" id="aiAgain" style="margin-top:8px">${t('aiRetry')}</button></div></div>`;
@@ -471,13 +525,15 @@ async function save() {
   if (!name) { err.hidden = false; err.textContent = t('needName'); $('#f_name').focus(); return; }
   const k = F.kind;
   const o = { ...(F.it || {}), kind: k };
-  ['pron', 'name', 'country', 'region', 'producer', 'abv', 'volume', 'price', 'qty', 'purchased', 'shop', 'location', 'desc', 'story', 'pairing', 'note', 'sources'].forEach(n => {
+  ['pron', 'name', 'country', 'region', 'producer', 'abv', 'volume', 'price', 'qty', 'purchased', 'shop', 'location', 'desc', 'story', 'pairing', 'note', 'sources', 'vivino', 'vivinoCount', 'vivinoUrl'].forEach(n => {
     const x = String(fd.get(n) ?? '').trim();
     o[n] = x === '' ? null : NUM.includes(n) ? Number(x) : x;
   });
   o.type = String(fd.get('type_' + k) || '') || null;
   const num = n => has(fd.get(n)) ? Number(fd.get(n)) : null;
   o.vintage = k === 'wine' ? num('vintage') : null;
+  if (k !== 'wine') o.vivino = o.vivinoCount = o.vivinoUrl = null;
+  if (has(o.vivino) && !(o.vivino >= 1 && o.vivino <= 5)) o.vivino = null;
   o.grapes = k === 'wine' ? (String(fd.get('grapes') || '').trim() || null) : null;
   o.age = k !== 'wine' ? num('age') : null;
   o.cask = k === 'whisky' ? (String(fd.get('cask') || '').trim() || null) : null;
@@ -562,7 +618,7 @@ function download(name, text, type) {
   setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
 }
 function exportCsv() {
-  const cols = ['kind', 'pron', 'name', 'type', 'vintage', 'age', 'country', 'region', 'producer', 'grapes', 'cask', 'abv', 'volume', ...ALL_TASTE, 'opened', 'remaining', 'price', 'qty', 'purchased', 'shop', 'location', 'desc', 'story', 'pairing', 'note', 'created'];
+  const cols = ['kind', 'pron', 'name', 'type', 'vintage', 'age', 'country', 'region', 'producer', 'grapes', 'cask', 'abv', 'volume', ...ALL_TASTE, 'opened', 'remaining', 'price', 'qty', 'purchased', 'shop', 'location', 'desc', 'story', 'pairing', 'note', 'vivino', 'vivinoCount', 'vivinoUrl', 'created'];
   const q = v => { v = v == null ? '' : String(v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
   const csv = '﻿' + [cols.join(','), ...S.items.map(it => cols.map(c => q(it[c])).join(','))].join('\n');
   download(`sool-gotgan-${today()}.csv`, csv, 'text/csv');

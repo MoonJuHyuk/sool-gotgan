@@ -296,3 +296,9 @@ body[data-theme="all"] .toast{background:#F4EFE2;color:#1A1E3A}
 
 /* 도트 사진: 색을 진하고 또렷하게 */
 img.photo.px{filter:contrast(1.2) saturate(1.4) brightness(1.04)}
+
+/* Vivino */
+#vivBox{display:flex;flex-direction:column;gap:6px}
+.vivrow{font-size:15px}
+.vivlink{color:var(--accent);text-decoration:none}
+.vivlink b{font-size:18px}
