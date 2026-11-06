@@ -2,7 +2,7 @@ import { t, getLang, setLang, STR } from './i18n.js';
 import { LS, LocalStore, makeSheetStore, photoUrl, photoFallback, parseConnect, connectLinkFor } from './store.js';
 import { readLabel, findVivino, vivinoSearchUrl, MODELS } from './ai.js';
 
-const VERSION = '0.3.5';
+const VERSION = '0.3.6';
 const $ = s => document.querySelector(s);
 const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const has = v => v !== undefined && v !== null && v !== '';
@@ -27,6 +27,8 @@ const S = { items: [], filter: 'all', q: '', sort: LS.get('cellar.sort', 'recent
 /* ---------------- 테마 · 도트 그림 ---------------- */
 const themeOf = f => f === 'wine' ? 'wine' : f === 'other' ? 'other' : f === 'all' ? 'all' : 'whisky';
 const wineTone = it => /레드|red|rouge|rosso|tinto/i.test(it.type || '') ? 'red' : /화이트|white|blanc|bianco|blanco|샤블리/i.test(it.type || '') ? 'white' : (/로제|rosé|rose|스파클링|sparkling/i.test(it.type || '') ? 'etc' : 'red');
+// 와인 탭 막대용 분류: 레드 / 화이트 / 스파클링 / 로제 / 그 밖의 와인(디저트·오렌지 등)
+const wineCat = it => { const ty = it.type || ''; if (/스파클링|sparkling|크레망|crémant|cremant|샴페인|champagne|cava|카바|sekt|젝트|prosecco|프로세코|spumante/i.test(ty)) return 'sparkling'; if (/로제|rosé|rose|rosado|rosato/i.test(ty)) return 'rose'; if (!ty) return 'red'; const w = wineTone(it); return w === 'etc' ? 'etc' : /레드|red|rouge|rosso|tinto/i.test(ty) ? 'red' : w === 'white' ? 'white' : 'etc'; };
 const NEON = [[/사케|sake|청주|cheongju|약주|yakju/i, '#FF3E9A'], [/막걸리|makgeolli|전통/i, '#3FD6C8'], [/소주|soju|진|gin|보드카|vodka/i, '#A98BFF'], [/브랜디|brandy|코냑|cognac|럼|rum|데킬라|tequila/i, '#FF8A3D']];
 const neonOf = it => (NEON.find(([re]) => re.test(it.type || '')) || [, '#FFE14D'])[1];
 function spriteOf(it) {
@@ -134,10 +136,10 @@ function ledgerHTML() {
   const th = themeOf(S.filter);
   if (th === 'wine') {
     const wines = S.items.filter(i => kindOf(i) === 'wine');
-    const cnt = tone => wines.filter(i => wineTone(i) === tone).reduce((n, i) => n + qtyOf(i), 0);
+    const cnt = c => wines.filter(i => wineCat(i) === c).reduce((n, i) => n + qtyOf(i), 0);
     const row = (lab, n, color) => n ? `<div><span class="lab">${lab}</span><span class="cells">${'<i></i>'.repeat(Math.min(n, 30)).replace(/<i>/g, `<i style="background:${color}">`)}</span><span>${n}</span></div>` : '';
-    const r = cnt('red'), w = cnt('white'), e = cnt('etc');
-    return (r + w + e) ? `<div class="bars">${row(t('red'), r, '#E8485A')}${row(t('white'), w, '#F2C766')}${row(t('otherWine'), e, '#F7A8B8')}</div>` : `<span>${t('wine')} <b>0</b>${t('bottles')}</span>`;
+    const r = cnt('red'), w = cnt('white'), sp = cnt('sparkling'), ro = cnt('rose'), e = cnt('etc');
+    return (r + w + sp + ro + e) ? `<div class="bars">${row(t('red'), r, '#E8485A')}${row(t('white'), w, '#F2C766')}${row(t('sparkling'), sp, '#8FD3E8')}${row(t('rose'), ro, '#F7A8B8')}${row(t('otherWine'), e, '#C9A0FF')}</div>` : `<span>${t('wine')} <b>0</b>${t('bottles')}</span>`;
   }
   if (th === 'other') return `<span>${t('openSign')} · ${t('other')} <b>${sumKind('other')}</b>${t('bottles')}</span>`;
   const value = S.items.reduce((n, i) => n + (Number(i.price) || 0) * qtyOf(i), 0);
